@@ -7,7 +7,7 @@ import { selectAllUsers } from "../users/usersSlice";
 const AddPostForm = () => {
    const [title, setTitle] = useState("");
    const [content, setContent] = useState("");
-   const [userId, setUserId] = useState("")
+   const [userId, setUserId] = useState("");
 
    const users = useSelector(selectAllUsers);
 
@@ -27,11 +27,11 @@ const AddPostForm = () => {
       }
    };
 
-   const usersOptions = users.map(user => (
+   const usersOptions = users.map((user) => (
       <option key={user.id} value={user.id}>
          {user.name}
       </option>
-   ))
+   ));
 
    const canSave = Boolean(title) && Boolean(content) && Boolean(userId);
 
