@@ -8,7 +8,7 @@ const postsAdapter = createEntityAdapter({
 
 const initialState = postsAdapter.getInitialState();
 
-export const extendedApiSlice = apiSlice.injectEndpoints({
+export const extendedApiPostsSlice = apiSlice.injectEndpoints({
    endpoints: (builder) => ({
       getPosts: builder.query({
          query: () => "/posts",
@@ -34,7 +34,7 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
          providesTags: (result, error, arg) => [
             // arg is the parameter used on query function above
             { type: "Post", id: "LIST" },
-            ...result.ids.map((id) => ({ type: "Post", id })),
+            ...result.ids.map((id) => ({ type: "Post", id })), // provide a unique tag for each post, so we can update those individually
          ],
       }),
       getPostsByUserId: builder.query({
@@ -118,7 +118,7 @@ export const extendedApiSlice = apiSlice.injectEndpoints({
             // `updateQueryData` requires the endpoint name and cache key arguments,
             // so it knows which piece of cache state to update
             const patchResult = dispatch(
-               extendedApiSlice.util.updateQueryData(
+               extendedApiPostsSlice.util.updateQueryData(
                   "getPosts",
                   undefined,
                   (draft) => {
@@ -144,13 +144,15 @@ export const {
    useAddNewPostMutation,
    useUpdatePostMutation,
    useDeletePostMutation,
-   useAddReactionMutation
-} = extendedApiSlice;
+   useAddReactionMutation,
+} = extendedApiPostsSlice;
 
 // returns the query result object
-export const selectPostsResult = extendedApiSlice.endpoints.getPosts.select();
+export const selectPostsResult =
+   extendedApiPostsSlice.endpoints.getPosts.select();
 
 // creates memoized selector
+// usage of this is so we can only return the normalized state instead of the whole object returned from the getposts query
 const selectPostsData = createSelector(
    selectPostsResult,
    (postsResult) => postsResult.data // normalized state object with ids and entities

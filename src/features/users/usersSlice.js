@@ -1,32 +1,36 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import { createSelector, createEntityAdapter } from "@reduxjs/toolkit";
+import sub from "date-fns/sub";
+import { apiSlice } from "../api/apiSlice";
 
-const USERS_URL = "https://jsonplaceholder.typicode.com/users";
-
-const initialState = [];
-
-export const fetchUsers = createAsyncThunk("users/fetchUsers", async () => {
-   try {
-      const response = await axios.get(USERS_URL);
-      return response.data;
-   } catch (err) {
-      return err.messsage;
-   }
+const usersAdapter = createEntityAdapter({
+   sortComparer: (a, b) => String(b.id).localeCompare(String(a.id)),
 });
 
-const userSlice = createSlice({
-   name: "users",
-   initialState,
-   reducers: {},
-   extraReducers(builder) {
-      builder.addCase(fetchUsers.fulfilled, (state, action) => {
-         return action.payload;
-      });
-   },
+const initialState = usersAdapter.getInitialState();
+
+export const extendedApiUsersSlice = apiSlice.injectEndpoints({
+   endpoints: (builder) => ({
+      getUsers: builder.query({
+         query: () => "/users",
+         transformResponse: (responseData) => {
+            return usersAdapter.setAll(initialState, responseData);
+         },
+         providesTags: (result, error, arg) => [
+            { type: "User", id: "List" },
+            ...result.ids.map((id) => ({ type: "User", id })),
+         ],
+      }),
+   }),
 });
 
-export const selectAllUsers = (state) => state.users;
-export const selectUserById = (state, userId) =>
-   state.users.find((user) => user.id === userId);
+export const { useGetUsersQuery } = extendedApiUsersSlice;
 
-export default userSlice.reducer;
+export const selectUsersResult =
+   extendedApiUsersSlice.endpoints.getUsers.select();
+const selectUsersData = createSelector(
+   selectUsersResult,
+   (usersResult) => usersResult.data
+);
+
+export const { selectAll: selectAllUsers, selectById: selectUserById } =
+   usersAdapter.getSelectors((state) => selectUsersData(state) ?? initialState);
